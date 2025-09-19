@@ -21,18 +21,61 @@
   },
   "services": {
     "api-gateway": {
-      "name": "api-gateway",
-      "description": "Envoy API Gateway to route requests to the correct service and verify the need of authentication",
       "type": "custom",
       "advanced": false,
-      "replicas": 1,
-      "sourceMarketplaceItem": {
-        "itemId": "envoy-api-gateway",
-        "version": "1.29.2",
-        "tenantId": "mia-platform"
-      },
+      "name": "api-gateway",
       "dockerImage": "nexus.mia-platform.eu/cache/envoyproxy/envoy:v1.29.2",
-      "createdAt": "2025-09-19T14:16:38.784Z",
+      "replicas": 1,
+      "serviceAccountName": "api-gateway",
+      "logParser": "mia-json",
+      "description": "Envoy API Gateway to route requests to the correct service and verify the need of authentication",
+      "environment": [
+        {
+          "name": "LOG_LEVEL",
+          "valueType": "plain",
+          "value": "{{LOG_LEVEL}}"
+        },
+        {
+          "name": "MICROSERVICE_GATEWAY_SERVICE_NAME",
+          "valueType": "plain",
+          "value": "microservice-gateway"
+        },
+        {
+          "name": "TRUSTED_PROXIES",
+          "valueType": "plain",
+          "value": "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+        },
+        {
+          "name": "HTTP_PORT",
+          "valueType": "plain",
+          "value": "3000"
+        },
+        {
+          "name": "USERID_HEADER_KEY",
+          "valueType": "plain",
+          "value": "miauserid"
+        },
+        {
+          "name": "GROUPS_HEADER_KEY",
+          "valueType": "plain",
+          "value": "miausergroups"
+        },
+        {
+          "name": "CLIENTTYPE_HEADER_KEY",
+          "valueType": "plain",
+          "value": "client-type"
+        },
+        {
+          "name": "BACKOFFICE_HEADER_KEY",
+          "valueType": "plain",
+          "value": "isbackoffice"
+        },
+        {
+          "name": "USER_PROPERTIES_HEADER_KEY",
+          "valueType": "plain",
+          "value": "miauserproperties"
+        }
+      ],
       "annotations": [
         {
           "name": "mia-platform.eu/version",
@@ -112,79 +155,28 @@
           "isSelector": false
         }
       ],
-      "tags": [
-        "custom"
-      ],
-      "sourceComponentId": "api-gateway-envoy",
-      "environment": [
-        {
-          "name": "LOG_LEVEL",
-          "value": "{{LOG_LEVEL}}",
-          "valueType": "plain"
-        },
-        {
-          "name": "MICROSERVICE_GATEWAY_SERVICE_NAME",
-          "value": "microservice-gateway",
-          "valueType": "plain"
-        },
-        {
-          "name": "TRUSTED_PROXIES",
-          "value": "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
-          "valueType": "plain"
-        },
-        {
-          "name": "HTTP_PORT",
-          "value": "3000",
-          "valueType": "plain"
-        },
-        {
-          "name": "USERID_HEADER_KEY",
-          "value": "miauserid",
-          "valueType": "plain"
-        },
-        {
-          "name": "GROUPS_HEADER_KEY",
-          "value": "miausergroups",
-          "valueType": "plain"
-        },
-        {
-          "name": "CLIENTTYPE_HEADER_KEY",
-          "value": "client-type",
-          "valueType": "plain"
-        },
-        {
-          "name": "BACKOFFICE_HEADER_KEY",
-          "value": "isbackoffice",
-          "valueType": "plain"
-        },
-        {
-          "name": "USER_PROPERTIES_HEADER_KEY",
-          "value": "miauserproperties",
-          "valueType": "plain"
-        }
-      ],
       "resources": {
+        "cpuLimits": {
+          "max": "200m",
+          "min": "150m"
+        },
         "memoryLimits": {
           "max": "250Mi",
           "min": "150Mi"
-        },
-        "cpuLimits": {
-          "min": "150m",
-          "max": "200m"
         }
       },
       "probes": {
         "liveness": {
-          "port": "frontend",
           "path": "/healthz",
+          "port": "frontend",
           "initialDelaySeconds": 15,
           "periodSeconds": 20,
           "timeoutSeconds": 1,
           "failureThreshold": 3
         },
         "readiness": {
-          "port": "frontend",
           "path": "/healthz",
+          "port": "frontend",
           "initialDelaySeconds": 5,
           "periodSeconds": 10,
           "timeoutSeconds": 1,
@@ -193,19 +185,9 @@
         },
         "startup": {}
       },
-      "serviceAccountName": "api-gateway",
-      "args": [
-        "-c",
-        "/etc/envoy/envoy.json",
-        "-l",
-        "{{LOG_LEVEL}}",
-        "--log-format",
-        "{\"level\":\"%l\",\"time\":\"%Y-%m-%dT%T.%fZ\",\"scope\":\"%n\",\"message\":\"%j\"}",
-        "--drain-time-s",
-        "50"
+      "tags": [
+        "custom"
       ],
-      "terminationGracePeriodSeconds": 60,
-      "logParser": "mia-json",
       "swaggerPath": "",
       "configMaps": [
         {
@@ -217,6 +199,13 @@
           }
         }
       ],
+      "sourceComponentId": "api-gateway-envoy",
+      "sourceMarketplaceItem": {
+        "itemId": "envoy-api-gateway",
+        "version": "1.29.2",
+        "tenantId": "mia-platform"
+      },
+      "createdAt": "2025-09-19T14:16:38.784Z",
       "containerPorts": [
         {
           "name": "frontend",
@@ -238,7 +227,18 @@
         "bash",
         "-c",
         "echo -e 'POST /drain_listeners?graceful HTTP/1.1\r\nHost: localhost:9901\r\n\r' > /dev/tcp/localhost/9901 && sleep 55s"
-      ]
+      ],
+      "args": [
+        "-c",
+        "/etc/envoy/envoy.json",
+        "-l",
+        "{{LOG_LEVEL}}",
+        "--log-format",
+        "{\"level\":\"%l\",\"time\":\"%Y-%m-%dT%T.%fZ\",\"scope\":\"%n\",\"message\":\"%j\"}",
+        "--drain-time-s",
+        "50"
+      ],
+      "terminationGracePeriodSeconds": 60
     }
   },
   "configMaps": {
@@ -260,7 +260,16 @@
   },
   "serviceSecrets": {},
   "apiVersions": [],
-  "unsecretedVariables": [],
+  "unsecretedVariables": [
+    {
+      "name": "STAGE_TO_DEPLOY",
+      "environments": {
+        "dev": {
+          "value": "dev"
+        }
+      }
+    }
+  ],
   "listeners": {
     "frontend": {
       "name": "frontend",
@@ -269,6 +278,7 @@
       "selectedByDefault": true
     }
   },
+  "lastCommitAuthor": "Davide Patti",
   "version": "0.61.0",
   "servicesToDeploy": {
     "api-gateway": {
@@ -278,9 +288,9 @@
         "custom"
       ],
       "version": "v1.29.2",
-      "checksum": "92ffd472ddf276b565520dcd132c160f23142d3ab25c45fc9b452a90e1b5501d"
+      "checksum": "1af55df181bc2a102f72ab8d6157b5988b1e3b9b2e03bbf75db66e4fa45c4d35"
     }
   },
   "platformVersion": "14.1.0-alpha.0",
-  "updatedAt": "2025-09-19T14:16:46.081Z"
+  "updatedAt": "2025-09-19T14:21:01.051Z"
 }
