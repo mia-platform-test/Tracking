@@ -1,0 +1,286 @@
+{
+  "applications": {},
+  "collections": {},
+  "endpoints": {},
+  "groups": [],
+  "secrets": [],
+  "cmsCategories": {},
+  "cmsSettings": {
+    "accessGroupsExpression": "isBackoffice && groups.admin"
+  },
+  "cmsAnalytics": {},
+  "cmsDashboard": [],
+  "decorators": {
+    "preDecorators": {},
+    "postDecorators": {}
+  },
+  "serviceAccounts": {
+    "api-gateway": {
+      "name": "api-gateway"
+    }
+  },
+  "services": {
+    "api-gateway": {
+      "name": "api-gateway",
+      "description": "Envoy API Gateway to route requests to the correct service and verify the need of authentication",
+      "type": "custom",
+      "advanced": false,
+      "replicas": 1,
+      "sourceMarketplaceItem": {
+        "itemId": "envoy-api-gateway",
+        "version": "1.29.2",
+        "tenantId": "mia-platform"
+      },
+      "dockerImage": "nexus.mia-platform.eu/cache/envoyproxy/envoy:v1.29.2",
+      "createdAt": "2025-09-19T14:16:38.784Z",
+      "annotations": [
+        {
+          "name": "mia-platform.eu/version",
+          "value": "14.1.0-alpha.0",
+          "description": "Version of Mia-Platform used by the project",
+          "readOnly": true
+        },
+        {
+          "name": "fluentbit.io/parser",
+          "value": "pino",
+          "description": "Pino parser annotation for Fluent Bit",
+          "readOnly": true
+        }
+      ],
+      "labels": [
+        {
+          "name": "app",
+          "value": "api-gateway",
+          "description": "Name of the microservice, in the service selector",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "app.kubernetes.io/name",
+          "value": "api-gateway",
+          "description": "Name of the microservice",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "app.kubernetes.io/version",
+          "value": "v1.29.2",
+          "description": "Tag of the Docker image",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "app.kubernetes.io/component",
+          "value": "custom",
+          "description": "Microservice kind, for the Console",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "app.kubernetes.io/part-of",
+          "value": "tracking",
+          "description": "Project that own the microservice",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "app.kubernetes.io/managed-by",
+          "value": "mia-platform",
+          "description": "Identify who manage the service",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "mia-platform.eu/stage",
+          "value": "{{STAGE_TO_DEPLOY}}",
+          "description": "Environment used for the deploy",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "mia-platform.eu/tenant",
+          "value": "c1d106ff-4716-49a1-88e2-940b21705986",
+          "description": "Tenant owner of the project",
+          "readOnly": true,
+          "isSelector": false
+        },
+        {
+          "name": "mia-platform.eu/log-type",
+          "value": "mia-json",
+          "description": "Format of logs for the microservice",
+          "readOnly": true,
+          "isSelector": false
+        }
+      ],
+      "tags": [
+        "custom"
+      ],
+      "sourceComponentId": "api-gateway-envoy",
+      "environment": [
+        {
+          "name": "LOG_LEVEL",
+          "value": "{{LOG_LEVEL}}",
+          "valueType": "plain"
+        },
+        {
+          "name": "MICROSERVICE_GATEWAY_SERVICE_NAME",
+          "value": "microservice-gateway",
+          "valueType": "plain"
+        },
+        {
+          "name": "TRUSTED_PROXIES",
+          "value": "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16",
+          "valueType": "plain"
+        },
+        {
+          "name": "HTTP_PORT",
+          "value": "3000",
+          "valueType": "plain"
+        },
+        {
+          "name": "USERID_HEADER_KEY",
+          "value": "miauserid",
+          "valueType": "plain"
+        },
+        {
+          "name": "GROUPS_HEADER_KEY",
+          "value": "miausergroups",
+          "valueType": "plain"
+        },
+        {
+          "name": "CLIENTTYPE_HEADER_KEY",
+          "value": "client-type",
+          "valueType": "plain"
+        },
+        {
+          "name": "BACKOFFICE_HEADER_KEY",
+          "value": "isbackoffice",
+          "valueType": "plain"
+        },
+        {
+          "name": "USER_PROPERTIES_HEADER_KEY",
+          "value": "miauserproperties",
+          "valueType": "plain"
+        }
+      ],
+      "resources": {
+        "memoryLimits": {
+          "max": "250Mi",
+          "min": "150Mi"
+        },
+        "cpuLimits": {
+          "min": "150m",
+          "max": "200m"
+        }
+      },
+      "probes": {
+        "liveness": {
+          "port": "frontend",
+          "path": "/healthz",
+          "initialDelaySeconds": 15,
+          "periodSeconds": 20,
+          "timeoutSeconds": 1,
+          "failureThreshold": 3
+        },
+        "readiness": {
+          "port": "frontend",
+          "path": "/healthz",
+          "initialDelaySeconds": 5,
+          "periodSeconds": 10,
+          "timeoutSeconds": 1,
+          "successThreshold": 1,
+          "failureThreshold": 3
+        },
+        "startup": {}
+      },
+      "serviceAccountName": "api-gateway",
+      "args": [
+        "-c",
+        "/etc/envoy/envoy.json",
+        "-l",
+        "{{LOG_LEVEL}}",
+        "--log-format",
+        "{\"level\":\"%l\",\"time\":\"%Y-%m-%dT%T.%fZ\",\"scope\":\"%n\",\"message\":\"%j\"}",
+        "--drain-time-s",
+        "50"
+      ],
+      "terminationGracePeriodSeconds": 60,
+      "logParser": "mia-json",
+      "swaggerPath": "",
+      "configMaps": [
+        {
+          "name": "api-gateway-envoy-config",
+          "mountPath": "/etc/envoy",
+          "viewAsReadOnly": true,
+          "link": {
+            "targetSection": "endpoints"
+          }
+        }
+      ],
+      "containerPorts": [
+        {
+          "name": "frontend",
+          "from": 8080,
+          "to": 8080
+        },
+        {
+          "name": "backoffice",
+          "from": 8081,
+          "to": 8081
+        },
+        {
+          "name": "admin",
+          "from": 9901,
+          "to": 9901
+        }
+      ],
+      "execPreStop": [
+        "bash",
+        "-c",
+        "echo -e 'POST /drain_listeners?graceful HTTP/1.1\r\nHost: localhost:9901\r\n\r' > /dev/tcp/localhost/9901 && sleep 55s"
+      ]
+    }
+  },
+  "configMaps": {
+    "api-gateway-envoy-config": {
+      "name": "api-gateway-envoy-config",
+      "gitFilesFolder": "api-gateway/envoy",
+      "files": [
+        {
+          "name": "cds.json"
+        },
+        {
+          "name": "lds.json"
+        },
+        {
+          "name": "envoy.json"
+        }
+      ]
+    }
+  },
+  "serviceSecrets": {},
+  "apiVersions": [],
+  "unsecretedVariables": [],
+  "listeners": {
+    "frontend": {
+      "name": "frontend",
+      "port": 8080,
+      "description": "Default listener for frontend API",
+      "selectedByDefault": true
+    }
+  },
+  "version": "0.61.0",
+  "servicesToDeploy": {
+    "api-gateway": {
+      "type": "custom",
+      "name": "api-gateway",
+      "tags": [
+        "custom"
+      ],
+      "version": "v1.29.2",
+      "checksum": "92ffd472ddf276b565520dcd132c160f23142d3ab25c45fc9b452a90e1b5501d"
+    }
+  },
+  "platformVersion": "14.1.0-alpha.0",
+  "updatedAt": "2025-09-19T14:16:46.081Z"
+}
